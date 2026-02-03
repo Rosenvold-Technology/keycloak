@@ -1,13 +1,20 @@
 # Keycloak
 
-Production-ready Keycloak 23.0.0 Docker image with pre-built Quarkus optimization.
+Production-ready Keycloak Docker images with pre-built Quarkus optimization.
+
+**Available versions:** 23.0.0, 26.5.2
 
 ## Quick Start
 
 Pull the image from GitHub Container Registry:
 
 ```bash
+# Latest version (26.5.2)
 docker pull ghcr.io/rosenvold-technology/keycloak:latest
+
+# Or specific version
+docker pull ghcr.io/rosenvold-technology/keycloak:26.5.2
+docker pull ghcr.io/rosenvold-technology/keycloak:23.0.0
 ```
 
 ### Development Mode
@@ -42,10 +49,11 @@ docker run -p 8443:8443 -p 9000:9000 \
 
 | Tag | Description |
 |-----|-------------|
-| `latest` | Latest build from main branch |
-| `23.0.0` | Keycloak version |
-| `23.0.0-<sha>` | Keycloak version with commit SHA |
-| `v*.*.*` | Semantic version tags |
+| `latest` | Latest build (26.5.2) from main branch |
+| `26.5.2` | Keycloak 26.5.2 |
+| `26.5.2-<sha>` | Keycloak 26.5.2 with commit SHA |
+| `23.0.0` | Keycloak 23.0.0 (legacy) |
+| `23.0.0-<sha>` | Keycloak 23.0.0 with commit SHA |
 
 ## Exposed Ports
 

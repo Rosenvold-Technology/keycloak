@@ -50,6 +50,9 @@ EXPOSE 8080 8443 9000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '"status":"UP"'
 
+# Re-declare ARG for use in this stage
+ARG KEYCLOAK_VERSION
+
 # OCI Image Labels
 LABEL org.opencontainers.image.title="Keycloak"
 LABEL org.opencontainers.image.description="Production-ready Keycloak identity and access management"

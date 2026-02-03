@@ -14,11 +14,17 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: rosenvold-technology/keycloak
-  KEYCLOAK_VERSION: "23.0.0"
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        keycloak_version:
+          - "23.0.0"
+          - "26.5.2"
 
     permissions:
       contents: read
@@ -50,18 +56,14 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            # latest tag for default branch (only for newest version)
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') && matrix.keycloak_version == '26.5.2' }}
             # Keycloak base version
-            type=raw,value=${{ env.KEYCLOAK_VERSION }},enable={{is_default_branch}}
+            type=raw,value=${{ matrix.keycloak_version }},enable={{is_default_branch}}
             # Version + commit SHA
-            type=raw,value=${{ env.KEYCLOAK_VERSION }}-{{sha}},enable={{is_default_branch}}
-            # Semver tags from git tags
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=${{ matrix.keycloak_version }}-{{sha}},enable={{is_default_branch}}
             # SHA for PRs
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
+            type=sha,prefix=${{ matrix.keycloak_version }}-,enable=${{ github.event_name == 'pull_request' }}
 
       - name: Build and push Docker image
         id: push
@@ -73,8 +75,10 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          build-args: |
+            KEYCLOAK_VERSION=${{ matrix.keycloak_version }}
+          cache-from: type=gha,scope=keycloak-${{ matrix.keycloak_version }}
+          cache-to: type=gha,mode=max,scope=keycloak-${{ matrix.keycloak_version }}
           sbom: true
           provenance: mode=max
 
@@ -85,3 +89,17 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 23.0.0 | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 26.5.2 | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
